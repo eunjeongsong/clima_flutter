@@ -1,11 +1,10 @@
-import 'dart:convert';
-
+import 'package:clima_flutter/screens/location_screen.dart';
 import 'package:clima_flutter/services/location.dart';
+import 'package:clima_flutter/services/networking.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:http/http.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
-const appId = "a49275fd8d9c962e9d3fd1b0bf4146aa";
+import '../key.dart';
 
 class LoadingScreen extends StatefulWidget {
   const LoadingScreen({Key? key}) : super(key: key);
@@ -18,52 +17,34 @@ class _LoadingScreenState extends State<LoadingScreen> {
   @override
   void initState() {
     super.initState();
-    getLocation();
+    getLocationData();
   }
 
-  void getLocation() async {
-    try {
-      Location location = Location();
-      await location.getCurrentLocation();
-      double latitude = location.latitude;
-      double longitude = location.longitude;
-      getData(latitude, longitude);
-    } catch (e) {
-      print(e);
-    }
-  }
+  void getLocationData() async {
+    Location location = Location();
+    await location.getCurrentLocation();
 
-  void getData(latitude, longitude) async {
+    double latitude = location.latitude;
+    double longitude = location.longitude;
+
     Uri url = Uri.parse(
-        'https://api.openweathermap.org/data/2.5/weather?lat=$latitude&lon=$longitude&appid=$appId');
-    Response response = await http.get(url);
-    if (response.statusCode == 200) {
-      String data = response.body;
-      dynamic decodeData = jsonDecode(data);
+        'https://api.openweathermap.org/data/2.5/weather?lat=$latitude&lon=$longitude&appid=$appId&units=metric');
 
-      double temperature = decodeData['main']['temp'];
-      int condition = decodeData['weather'][0]['id'];
-      String cityName = decodeData['name'];
-    } else {
-      print(response.statusCode);
-    }
+    var weatherData = await NetworkHelper(url).getData();
+
+    Navigator.push(context, MaterialPageRoute(builder: (context) {
+      return LocationScreen(locationWeather: weatherData);
+    }));
   }
 
   @override
   Widget build(BuildContext context) {
-    String myMargin = "15";
-    double? myMarginAsDouble;
-
-    try {
-      myMarginAsDouble = double.parse(myMargin);
-    } catch (e) {
-      print(e);
-    }
-
-    return Scaffold(
-      body: Container(
-        margin: EdgeInsets.all(myMarginAsDouble ?? 30.0),
-        color: Colors.red,
+    return const Scaffold(
+      body: Center(
+        child: SpinKitDoubleBounce(
+          color: Colors.white,
+          size: 100.0,
+        ),
       ),
     );
   }
